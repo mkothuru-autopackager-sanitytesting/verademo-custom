@@ -1,11 +1,6 @@
-# VeraDemo - Blab-a-Gag.
- 
-## Abouts.
 
-
-### URLs
 sccsx
-`/reset` will reset the data in the database with a load of:sdxasx
+`/reset` will reset the data in the database with a load of: 
 
 - users
 - jokes
