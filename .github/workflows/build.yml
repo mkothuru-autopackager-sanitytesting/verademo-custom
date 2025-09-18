@@ -77,5 +77,5 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: veracode-artifact
-        path: "${{ steps.application_package.outputs.working_dir }}/veracode-artifacts/*"
+        path: "/home/runner/work/verademo-custom/verademo-custom/veracode-artifacts/*"
         if-no-files-found: error
