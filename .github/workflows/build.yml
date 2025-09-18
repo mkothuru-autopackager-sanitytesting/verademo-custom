@@ -31,21 +31,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
+        path: 'veracode-helper'
+
+    - uses: actions/checkout@v4
+      with:
         repository: ${{ github.event.client_payload.repository.full_name }}
         ref: ${{ github.event.client_payload.sha }}
         token: ${{ github.event.client_payload.token }}
-    - uses: actions/checkout@v4
-      with:
-        path: 'veracode-helper'
+        path: 'source-code'
+
     - uses: actions/setup-java@v4
       with:
         java-version: 21
         distribution: oracle
+
     - name: Cache Maven Dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
     - name: Package the appliccation
       env:
         VERACODE_API_KEY_ID: '${{ secrets.VERACODE_API_ID }}'
@@ -68,6 +73,7 @@ jobs:
           cd ..
         fi
         veracode package --source source-code --output veracode-artifacts --trust
+
     - uses: actions/upload-artifact@v4
       with:
         name: veracode-artifact
