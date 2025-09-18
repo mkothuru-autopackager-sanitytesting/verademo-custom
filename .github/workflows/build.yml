@@ -51,16 +51,23 @@ jobs:
         VERACODE_API_KEY_ID: '${{ secrets.VERACODE_API_ID }}'
         VERACODE_API_KEY_SECRET: '${{ secrets.VERACODE_API_KEY }}'
       run: |
+        working_path=`pwd`
+        echo "working_dir=$working_path" >> "$GITHUB_OUTPUT"
         cd veracode-helper/helper/cli
         cliFile=$(ls -1 . | head -n 1)
         cliFileName=$(echo "$cliFile" | cut -c 1-$((${#cliFile}-7)))
         tar -zxvf $cliFile
         cd $cliFileName
-        chmod +x install.sh
-        ./install.sh system
-        cd /home/runner/work/verademo/verademo/
-        veracode package --source . --output veracode-artifacts --trust
-        zip veracode-artifact.zip veracode-artifacts/* -x .zip .tar .tar.gz .gz
+        export PATH="veracode-helper/helper/cli/$cliFileName:$PATH"
+        cd $working_path
+        if [[ "${{ inputs.event_name }}" == *"ruby"* ]]; then
+          gem install --install-dir source-code veracode
+          cd source-code
+          gem install bundler -v ${{ inputs.bundle_version }}
+          bundle install
+          cd ..
+        fi
+        veracode package --source source-code --output veracode-artifacts --trust
     - uses: actions/upload-artifact@v4
       with:
         name: veracode-artifact
