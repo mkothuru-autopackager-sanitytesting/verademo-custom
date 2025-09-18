@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Register build
         id: register-build
-        uses: veracode/github-actions-integration-helper@main
+        uses: veracode/github-actions-integration-helper@v0.1.7
         with:
           action: registerBuild
           token: ${{ github.event.client_payload.token }}
@@ -31,37 +31,51 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
+        path: 'veracode-helper'
+
+    - uses: actions/checkout@v4
+      with:
         repository: ${{ github.event.client_payload.repository.full_name }}
         ref: ${{ github.event.client_payload.sha }}
         token: ${{ github.event.client_payload.token }}
-    - uses: actions/checkout@v4
-      with:
-        path: 'veracode-helper'
+        path: 'source-code'
+
     - uses: actions/setup-java@v4
       with:
         java-version: 21
         distribution: oracle
+
     - name: Cache Maven Dependencies
       uses: actions/cache@v4
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
     - name: Package the appliccation
       env:
         VERACODE_API_KEY_ID: '${{ secrets.VERACODE_API_ID }}'
         VERACODE_API_KEY_SECRET: '${{ secrets.VERACODE_API_KEY }}'
       run: |
+        working_path=`pwd`
+        echo "working_dir=$working_path" >> "$GITHUB_OUTPUT"
         cd veracode-helper/helper/cli
         cliFile=$(ls -1 . | head -n 1)
         cliFileName=$(echo "$cliFile" | cut -c 1-$((${#cliFile}-7)))
         tar -zxvf $cliFile
         cd $cliFileName
-        chmod +x install.sh
-        ./install.sh system
-        cd /home/runner/work/verademo/verademo/
-        veracode package --source . --output veracode-artifacts --trust
-        zip veracode-artifact.zip veracode-artifacts/* -x .zip .tar .tar.gz .gz
+        export PATH="veracode-helper/helper/cli/$cliFileName:$PATH"
+        cd $working_path
+        if [[ "${{ inputs.event_name }}" == *"ruby"* ]]; then
+          gem install --install-dir source-code veracode
+          cd source-code
+          gem install bundler -v ${{ inputs.bundle_version }}
+          bundle install
+          cd ..
+        fi
+        veracode package --source source-code --output veracode-artifacts --trust
+
     - uses: actions/upload-artifact@v4
       with:
         name: veracode-artifact
-        path: veracode-artifact.zip
+        path: "/home/runner/work/verademo-custom/verademo-custom/veracode-artifacts/*"
+        if-no-files-found: error

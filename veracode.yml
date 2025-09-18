@@ -1,4 +1,3 @@
 veracode_static_scan:
   use_custom_workflow: verademo-build
   artifact_file: veracode-artifact
-  profile: 'build'
